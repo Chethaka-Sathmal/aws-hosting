@@ -1,8 +1,8 @@
 # ![RealWorld Example App](logo.png)
 
-> **React / Vite + SWC / Express.js / Sequelize / PostgreSQL codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://realworld.io/) spec and API.**
+> **React / Vite + SWC / Express.js / Sequelize / MySQL codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://realworld.io/) spec and API.**
 
-This codebase was created to demonstrate a fully fledged fullstack application built with **React / Vite + SWC / Express.js / Sequelize / PostgreSQL** including CRUD operations, authentication, routing, pagination, and more.
+This codebase was created to demonstrate a fully fledged fullstack application built with **React / Vite + SWC / Express.js / Sequelize / MySQL** including CRUD operations, authentication, routing, pagination, and more.
 
 **[Demo app](https://conduit-realworld-example-app.fly.dev/)&nbsp;&nbsp;|&nbsp;&nbsp;[With Create React App](https://github.com/TonyMckes/conduit-realworld-example-app/tree/create-react-app)&nbsp;&nbsp;|&nbsp;&nbsp;[Other RealWorld Example Apps](https://codebase.show/projects/realworld?category=fullstack)**
 
@@ -51,7 +51,7 @@ To install the project on your computer, follow these steps:
 1. Create a `.env` file in the root directory of the project
 2. Add the required environment variables as specified in the [`.env.example`](backend/.env.example) file
 3. (Optional) update the Sequelize configuration parameters in the [`config.js`](backend/config/config.js) file
-4. If you are **not** using PostgreSQL, you may also have to install the driver for your database:
+4. If you are **not** using MySQL, you may also have to install the driver for your database:
 
    <details>
    <summary>Use one of the following commands to install:</summary><br/>
@@ -59,8 +59,8 @@ To install the project on your computer, follow these steps:
    > Note: `-w backend` option is used to install it in the backend [`package.json`](backend/package.json).
 
    ```bash
-   npm install -w backend pg pg-hstore  # Postgres (already installed)
-   npm install -w backend mysql2
+   npm install -w backend mysql2        # MySQL (already installed)
+   npm install -w backend pg pg-hstore  # Postgres
    npm install -w backend mariadb
    npm install -w backend sqlite3
    npm install -w backend tedious       # Microsoft SQL Server
@@ -75,7 +75,7 @@ To install the project on your computer, follow these steps:
 
 5. Create database specified by configuration by executing
 
-   > :warning: Please, make sure you have already created a superuser for your database.
+   > :warning: Please, make sure you have already created a user with the necessary privileges for your database.
 
    ```bash
    npm run sqlz -- db:create
