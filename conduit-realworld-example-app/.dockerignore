@@ -1,0 +1,12 @@
+# Only the root package files and backend/ are copied into the image
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+.git
+frontend
+infra
+deploy
+docs
+coverage
+*.log
