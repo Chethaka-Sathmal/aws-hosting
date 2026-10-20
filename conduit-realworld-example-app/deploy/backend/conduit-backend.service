@@ -1,0 +1,24 @@
+[Unit]
+Description=Conduit backend API
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=conduit
+Group=conduit
+WorkingDirectory=/opt/conduit/backend
+# Written by user-data from SSM Parameter Store
+EnvironmentFile=/etc/conduit/backend.env
+ExecStart=/usr/local/bin/node index.js
+Restart=always
+RestartSec=5
+
+# Hardening: the API only needs to read its own code
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
