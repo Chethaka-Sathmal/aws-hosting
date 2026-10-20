@@ -6,7 +6,7 @@ async function userLogin({ email, password }) {
     const { data } = await axios({
       data: { user: { email, password } },
       method: "POST",
-      url: "api/users/login",
+      url: "/api/users/login",
     });
 
     const { user } = data;

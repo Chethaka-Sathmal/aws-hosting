@@ -3,7 +3,7 @@ import errorHandler from "../helpers/errorHandler";
 
 async function getProfile({ headers, username }) {
   try {
-    const { data } = await axios({ headers, url: `api/profiles/${username}` });
+    const { data } = await axios({ headers, url: `/api/profiles/${username}` });
 
     return data.profile;
   } catch (error) {

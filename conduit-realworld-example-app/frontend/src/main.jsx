@@ -1,3 +1,4 @@
+import axios from "axios";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HashRouter, Route, Routes } from "react-router-dom";
@@ -18,6 +19,9 @@ import ProfileArticles from "./routes/Profile/ProfileArticles";
 import ProfileFavArticles from "./routes/Profile/ProfileFavArticles";
 import Settings from "./routes/Settings";
 import SignUp from "./routes/SignUp";
+
+// Empty means same origin: CloudFront routes /api/* to the backend
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || undefined;
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
