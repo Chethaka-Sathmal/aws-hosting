@@ -16,7 +16,8 @@ const tagsRoutes = require("./routes/tags");
 const corsOrigin = process.env.CORS_ORIGIN?.split(",").map((o) => o.trim());
 
 const app = express();
-app.use(cors(corsOrigin ? { origin: corsOrigin } : undefined));
+// Without CORS headers, browsers only allow same-origin calls (CloudFront /api/*)
+if (corsOrigin) app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 
 (async () => {

@@ -159,7 +159,7 @@ The browser calls `/api/*` on the same origin, so no CORS setup is needed.
 | `PROD_DB_USERNAME` / `PROD_DB_PASSWORD` / `PROD_DB_NAME` | Database credentials (password as SecureString) |
 | `PROD_DB_DIALECT` / `PROD_DB_LOGGING` | `mysql` / `false` |
 | `ORIGIN_VERIFY_SECRET` | Optional. When set, `/api/*` requires a matching `X-Origin-Verify` header (SecureString) |
-| `CORS_ORIGIN` | Optional comma-separated allowlist. Unset allows any origin. Not needed in Phase 2. |
+| `CORS_ORIGIN` | Optional comma-separated allowlist of origins allowed to call the API cross-origin. Unset blocks all cross-origin requests; same-origin calls through CloudFront need nothing. |
 | `DB_SYNC` | **Leave unset.** `true` runs `sequelize.sync({ alter: true })` on startup, which is for development only. |
 
 `NODE_ENV=production` and `PORT=3001` are set by the user-data script.
