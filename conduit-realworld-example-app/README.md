@@ -178,18 +178,29 @@ The app uses `HashRouter` (`/#/article/...`), so CloudFront and S3 always reques
 
 ### Backend → EC2 (Auto Scaling group)
 
-1. Store the backend variables above as SSM parameters under one path, e.g. `/conduit/prod/JWT_KEY`, `/conduit/prod/PROD_DB_PASSWORD`, …
-2. Give the instance role `AmazonSSMManagedInstanceCore`, `ssm:GetParametersByPath` on that path, and `kms:Decrypt` for the SecureString key.
-3. Set `REPO_URL`, `GIT_REF` and `SSM_PREFIX` at the top of [`deploy/backend/user-data.sh`](deploy/backend/user-data.sh) and use it as the launch template's user data (Amazon Linux 2023). On boot, it:
+1. Package the backend at the current commit and upload it to an artifact bucket:
+
+   ```bash
+   ARTIFACT_BUCKET=my-conduit-artifacts deploy/backend/package-backend.sh
+   ```
+
+   [`package-backend.sh`](deploy/backend/package-backend.sh) uses `git archive` to pack `backend/`, the workspace `package.json`/`package-lock.json` and `deploy/backend/` into `s3://$ARTIFACT_BUCKET/backend/<git-sha>.tar.gz`. Only committed files are packed, so there's no `node_modules` or `.env`, and the script refuses to run if those paths have uncommitted changes. It prints the `ARTIFACT_KEY` to use.
+2. Store the backend variables above as SSM parameters under one path, e.g. `/conduit/prod/JWT_KEY`, `/conduit/prod/PROD_DB_PASSWORD`, …
+3. Give the instance role:
+   - `AmazonSSMManagedInstanceCore`
+   - `s3:GetObject` on `arn:aws:s3:::<ARTIFACT_BUCKET>/backend/*` (plus `kms:Decrypt` on the bucket key if it uses SSE-KMS)
+   - `ssm:GetParametersByPath` on the SSM path
+   - `kms:Decrypt` for the SecureString key
+4. Set `ARTIFACT_BUCKET`, `ARTIFACT_KEY` and `SSM_PREFIX` at the top of [`deploy/backend/user-data.sh`](deploy/backend/user-data.sh) and use it as the launch template's user data (Amazon Linux 2023). On boot, it:
    - installs Node.js;
-   - checks out `GIT_REF` into `/opt/conduit`;
+   - downloads the artifact with the instance role and extracts it into `/opt/conduit`;
    - runs `npm ci --omit=dev -w backend`;
    - writes `/etc/conduit/backend.env` from SSM;
    - starts the [`conduit-backend`](deploy/backend/conduit-backend.service) systemd service on port 3001.
 
-   Instances in private subnets need the NAT gateway to reach GitHub, nodejs.org and npm. If the repository is private, the clone needs credentials, or you can switch the script to fetch a build artifact from S3.
-4. Set the ALB target group to HTTP on port `3001`, with health check path **`/health`**. This liveness check doesn't touch the database, so an RDS failover won't make the ASG replace healthy instances.
-5. To roll out a new version, update `GIT_REF` in the launch template and start an instance refresh, after running migrations (below).
+   Instances in private subnets need the NAT gateway to reach nodejs.org and the npm registry. Add an S3 gateway endpoint to the VPC so artifact downloads don't go through the NAT.
+5. Set the ALB target group to HTTP on port `3001`, with health check path **`/health`**. This liveness check doesn't touch the database, so an RDS failover won't make the ASG replace healthy instances.
+6. To roll out a new version, package it (step 1), run migrations (below), then update `ARTIFACT_KEY` in the launch template and start an instance refresh.
 
 Logs: `journalctl -u conduit-backend` and `/var/log/conduit-user-data.log`.
 

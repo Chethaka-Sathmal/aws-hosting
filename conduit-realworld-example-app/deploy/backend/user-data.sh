@@ -2,18 +2,20 @@
 # EC2 user-data for the Conduit backend Auto Scaling group (Amazon Linux 2023).
 #
 # Paste into the launch template's user data after setting the variables below.
-# Each instance boots, installs Node, checks out GIT_REF, installs backend
-# dependencies, pulls config from SSM Parameter Store and starts the API.
+# Each instance boots, installs Node, downloads the backend artifact built by
+# deploy/backend/package-backend.sh, installs backend dependencies, pulls
+# config from SSM Parameter Store and starts the API.
 #
 # Database migrations are deliberately NOT run here; run them once per deploy
 # with deploy/backend/migrate.sh (see README).
 #
-# Instance role needs: AmazonSSMManagedInstanceCore, ssm:GetParametersByPath on
-# the SSM_PREFIX path, and kms:Decrypt for the key encrypting SecureStrings.
+# Instance role needs: AmazonSSMManagedInstanceCore, s3:GetObject on
+# ARTIFACT_BUCKET/backend/*, ssm:GetParametersByPath on the SSM_PREFIX path,
+# and kms:Decrypt for the key encrypting SecureStrings.
 set -euo pipefail
 
-REPO_URL="https://github.com/<owner>/conduit-realworld-example-app.git"
-GIT_REF="main"
+ARTIFACT_BUCKET="my-conduit-artifacts"
+ARTIFACT_KEY="backend/<git-sha>.tar.gz"
 SSM_PREFIX="/conduit/prod"
 NODE_VERSION="22.23.1"
 APP_DIR="/opt/conduit"
@@ -22,7 +24,12 @@ ENV_FILE="/etc/conduit/backend.env"
 exec > >(tee -a /var/log/conduit-user-data.log) 2>&1
 
 echo "==> Installing packages"
-dnf install -y git tar xz
+dnf install -y tar xz gzip
+
+imds_token="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 300")"
+region="$(curl -fsS -H "X-aws-ec2-metadata-token: $imds_token" \
+  http://169.254.169.254/latest/meta-data/placement/region)"
 
 echo "==> Installing Node.js $NODE_VERSION"
 case "$(uname -m)" in
@@ -43,9 +50,13 @@ node --version
 echo "==> Creating service user"
 id conduit &>/dev/null || useradd --system --create-home --shell /sbin/nologin conduit
 
-echo "==> Checking out $GIT_REF"
+echo "==> Downloading s3://$ARTIFACT_BUCKET/$ARTIFACT_KEY"
+artifact="$(mktemp)"
+aws s3 cp --region "$region" "s3://$ARTIFACT_BUCKET/$ARTIFACT_KEY" "$artifact"
 rm -rf "$APP_DIR"
-git clone --depth 1 --branch "$GIT_REF" "$REPO_URL" "$APP_DIR"
+mkdir -p "$APP_DIR"
+tar -xzf "$artifact" -C "$APP_DIR"
+rm -f "$artifact"
 chown -R conduit:conduit "$APP_DIR"
 
 echo "==> Installing backend dependencies"
@@ -53,11 +64,6 @@ echo "==> Installing backend dependencies"
 sudo -u conduit -H bash -c "cd '$APP_DIR' && npm ci --omit=dev -w backend"
 
 echo "==> Writing $ENV_FILE from SSM $SSM_PREFIX"
-imds_token="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token \
-  -H "X-aws-ec2-metadata-token-ttl-seconds: 300")"
-region="$(curl -fsS -H "X-aws-ec2-metadata-token: $imds_token" \
-  http://169.254.169.254/latest/meta-data/placement/region)"
-
 install -d -m 750 -o root -g conduit "$(dirname "$ENV_FILE")"
 env_tmp="$(mktemp)"
 {
