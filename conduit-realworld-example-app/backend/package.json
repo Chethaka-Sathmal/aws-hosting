@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node --watch index.js",
     "sqlz": "npx sequelize-cli",
-    "start": "node index.js"
+    "start": "node index.js",
+    "db:migrate": "sequelize-cli db:migrate"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -14,9 +15,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.23.2",
-    "sequelize": "^6.37.8"
-  },
-  "devDependencies": {
+    "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.5"
   }
 }
