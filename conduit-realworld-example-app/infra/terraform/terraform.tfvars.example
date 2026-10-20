@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars and fill in
+domain_name      = "conduit.example.com"
+hosted_zone_name = "example.com"
+image_tag        = "abc1234"

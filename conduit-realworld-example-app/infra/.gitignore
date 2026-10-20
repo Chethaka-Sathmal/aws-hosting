@@ -1,14 +1,5 @@
-# Provider plugins and local working data
-**/.terraform/
-
-# State (the main stack uses the S3 backend; bootstrap keeps local state,
-# which only describes the state bucket and can be re-imported if lost)
+.terraform/
 *.tfstate
 *.tfstate.*
-
-# Saved plans and crash logs may contain secrets
-*.tfplan
-crash.log
-crash.*.log
-
-# Keep .terraform.lock.hcl committed so everyone gets the same providers
+*.tfvars
+!*.tfvars.example
